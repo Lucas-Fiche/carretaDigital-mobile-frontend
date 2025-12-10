@@ -26,7 +26,7 @@ Aplicativo multiplataforma **(Web PWA e Android)** para acompanhamento em tempo 
 
 * **Hospedagem:** [Render.com](https://render.com/)
 
-**MAIS INFORMAÇÕES:** Para mais informações sobre o backend do aplicativo, acesse o repositório [carretaDigital-mobile-backend](https://github.com/Lucas-Fiche/carretaDigital-mobile-backend)
+**⚠️ MAIS INFORMAÇÕES: ⚠️** Para mais informações sobre o backend do aplicativo, acesse o repositório [carretaDigital-mobile-backend](https://github.com/Lucas-Fiche/carretaDigital-mobile-backend)
 
 # 🚀 Como Rodar o Projeto Localmente
 **1. Configurando o Backend (API)**
