@@ -30,6 +30,9 @@ Aplicativo multiplataforma **(Web PWA e Android)** para acompanhamento em tempo 
 
 # 🚀 Como Rodar o Projeto Localmente
 **1. Configurando o Backend (API)**
+
+**⚠️ MAIS INFORMAÇÕES: ⚠️** Para mais informações sobre o backend do aplicativo, acesse o repositório [carretaDigital-mobile-backend](https://github.com/Lucas-Fiche/carretaDigital-mobile-backend)
+
 A API lê os dados da planilha do Google e os entrega formatados em JSON.
 
 ```
