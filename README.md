@@ -160,3 +160,6 @@ O mapa só mostra "bolinhas" nos estados cadastrados no Python. Se a Carreta for
 
 * **API Demorando (Cold Start):** O plano gratuito do Render "dorme" após 15 minutos. O primeiro acesso do dia pode levar ~50 segundos.
 
+# 📝 Licença
+
+Esta aplicação é de uso interno do **Projeto Carreta Digital** e foi desenvolvida por **Lucas Fiche**.
