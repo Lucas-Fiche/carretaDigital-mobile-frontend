@@ -93,6 +93,48 @@ flutter run -d web-server --web-hostname=0.0.0.0 --web-port=8080
 flutter run
 ```
 
+# 🔄 Ciclo de Atualização
+
+Sempre que fizer alterações no código (novas telas, ajustes de cor, correções), siga este roteiro para entregar a nova versão:
+
+**Passo 1: Atualizar a Versão (Importante para Android)**
+
+Abra o arquivo `pubspec.yaml` e incremente o número da versão:
+
+De: `version: 1.0.0+1`
+
+Para: `version: 1.0.1+2`
+
+O número após o `+` deve sempre aumentar para o Android reconhecer como atualização.
+
+**Passo 2: Atualizar a Aplicação Web (Site)**
+
+1. Gere os arquivos novos:
+
+```
+flutter build web --release
+```
+
+2. Pegue a pasta gerada em `build/web`.
+
+3. Arraste para o painel "Deploys" do [Netlify](https://www.netlify.com/).
+
+4. Resultado: O site atualiza automaticamente para todos (pode precisar de F5).
+
+**Passo 3: Atualizar o App (Android)**
+
+1. Gere o novo instalador:
+
+```
+flutter build apk --release
+```
+
+2. Pegue o arquivo em `build/app/outputs/flutter-apk/app-release.apk`.
+
+3. Renomeie (ex: `CarretaDigital_v2.apk`) e envie via WhatsApp.
+
+4. Resultado: Ao instalar, o Android perguntará se deseja Atualizar o app existente.
+
 # 📦 Gerando Versões para Publicação
 
 Aqui estão os comandos para gerar os arquivos finais para entregar aos usuários.
