@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(const CarretaDigitalApp());
@@ -388,7 +389,7 @@ class _HomePageState extends State<HomePage> {
                   // MENU DE NAVEGAÇÃO
                   _buildNavButton(
                     context: context,
-                    label: "Dados dos Estados",
+                    label: "Estados",
                     icon: Icons.map,
                     onTap: () {
                       Navigator.push(context, MaterialPageRoute(builder: (context) => EstadosPage(
@@ -399,7 +400,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   _buildNavButton(
                     context: context,
-                    label: "Dados dos Alunos",
+                    label: "Alunos",
                     icon: Icons.person_3,
                     onTap: () {
                       Navigator.push(context, MaterialPageRoute(builder: (context) => AlunosPage(generos: dados.generos, totalPcd: dados.totalPcd)));
@@ -407,10 +408,18 @@ class _HomePageState extends State<HomePage> {
                   ),
                   _buildNavButton(
                     context: context,
-                    label: "Dados dos Cursos",
+                    label: "Cursos",
                     icon: Icons.menu_book,
                     onTap: () {
                        Navigator.push(context, MaterialPageRoute(builder: (context) => CursosPage(dadosCursos: dados.alunosPorCurso)));
+                    }
+                  ),
+                  _buildNavButton(
+                    context: context,
+                    label: "Buscar Certificados",
+                    icon: Icons.search, 
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const CertificadosPage()));
                     }
                   ),
                   
@@ -797,6 +806,277 @@ class CursosPage extends StatelessWidget {
                           color: AppColors.accentGreen,
                         ),
                       ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// --- MODELO ---
+class Certificado {
+  final String nome;
+  final String curso;
+  final String link;
+  final String estado;
+
+  Certificado({
+    required this.nome,
+    required this.curso,
+    required this.link,
+    required this.estado,
+  });
+
+  factory Certificado.fromJson(Map<String, dynamic> json) {
+    return Certificado(
+      nome: json['nome'] ?? '',
+      curso: json['curso'] ?? '',
+      link: json['link'] ?? '',
+      estado: json['estado'] ?? 'Estado não informado',
+    );
+  }
+}
+
+// --- TELA DE BUSCA ---
+class CertificadosPage extends StatefulWidget {
+  const CertificadosPage({super.key});
+
+  @override
+  State<CertificadosPage> createState() => _CertificadosPageState();
+}
+
+class _CertificadosPageState extends State<CertificadosPage> {
+  final TextEditingController _searchController = TextEditingController();
+  List<Certificado> _certificados = [];
+  bool _isLoading = false;
+  String _mensagem = "";
+  int _totalEncontrados = 0;
+  bool _buscaRealizada = false;
+
+  // COR AMARELA PADRÃO DO APP
+  final Color accentYellow = const Color(0xFFF1E513);
+  final Color primaryBlue = const Color(0xFF13008C);
+
+  // Função para buscar na API
+  Future<void> _buscarCertificados() async {
+    String nomeBusca = _searchController.text.trim();
+    if (nomeBusca.isEmpty) return;
+
+    FocusScope.of(context).unfocus();
+
+    setState(() {
+      _isLoading = true;
+      _mensagem = "Buscando...";
+      _certificados = [];
+      _totalEncontrados = 0;
+      _buscaRealizada = false;
+    });
+
+    final url = Uri.parse('https://api-carreta.onrender.com/certificados?nome=$nomeBusca');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        
+        final int totalAPI = data['total'] ?? 0;
+        final List<dynamic> listaResultados = data['resultados'] ?? [];
+
+        setState(() {
+          _certificados = listaResultados.map((item) => Certificado.fromJson(item)).toList();
+          _totalEncontrados = totalAPI;
+          _isLoading = false;
+          _buscaRealizada = true;
+          
+          if (_certificados.isEmpty) {
+            _mensagem = "Nenhum certificado encontrado para '$nomeBusca'.";
+          }
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
+          _mensagem = "Erro ao buscar: ${response.statusCode}";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _mensagem = "Erro de conexão. Verifique sua internet.";
+      });
+    }
+  }
+
+  Future<void> _abrirLink(String urlString) async {
+    final Uri url = Uri.parse(urlString);
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não foi possível abrir o link')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
+      appBar: AppBar(
+        title: const Text("Certificados", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: primaryBlue,
+        iconTheme: const IconThemeData(color: Colors.white),
+        centerTitle: true,
+        toolbarHeight: 80,
+        actions: [
+           IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              _searchController.clear();
+              setState(() {
+                _certificados = [];
+                _totalEncontrados = 0;
+                _mensagem = "";
+                _buscaRealizada = false;
+              });
+            },
+          )
+        ],
+      ),
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            color: const Color(0xFFF5F5F5),
+            padding: const EdgeInsets.only(top: 20, bottom: 5),
+            child: const Column(
+              children: [
+                Text(
+                  "CERTIFICADOS",
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
+                ),
+                Text(
+                  "Acompanhamento em tempo real",
+                  style: TextStyle(fontSize: 14, color: Colors.black54),
+                ),
+              ],
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
+            child: Column(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.black87, width: 1.0),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: "Digite o nome do aluno",
+                      hintStyle: const TextStyle(color: Colors.black54),
+                      prefixIcon: const Icon(Icons.search, color: Colors.black87),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                      suffixIcon: IconButton(
+                        icon: Icon(Icons.arrow_forward, color: primaryBlue),
+                        onPressed: _buscarCertificados,
+                      ),
+                    ),
+                    onSubmitted: (_) => _buscarCertificados(),
+                  ),
+                ),
+                
+                const SizedBox(height: 10),
+
+                if (!_isLoading && _buscaRealizada) 
+                  Text(
+                    "Total de alunos encontrados: $_totalEncontrados",
+                    style: const TextStyle(fontSize: 16, color: Colors.black87),
+                  ),
+                
+                const SizedBox(height: 10),
+
+                if (_isLoading)
+                  const Padding(
+                    padding: EdgeInsets.all(20.0),
+                    child: CircularProgressIndicator(),
+                  )
+                else if (_certificados.isEmpty && _mensagem.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20.0),
+                    child: Text(_mensagem, style: const TextStyle(color: Colors.grey)),
+                  ),
+              ],
+            ),
+          ),
+
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: _certificados.length,
+              itemBuilder: (context, index) {
+                final cert = _certificados[index];
+                
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 15),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: primaryBlue,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.3),
+                        blurRadius: 5,
+                        offset: const Offset(0, 3),
+                      )
+                    ],
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // NOME (Mantém Branco)
+                            Text(
+                              cert.nome,
+                              style: const TextStyle(
+                                fontSize: 20, 
+                                fontWeight: FontWeight.bold, 
+                                color: Colors.white
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            // ESTADO (Agora Amarelo)
+                            Text(
+                              cert.estado,
+                              style: TextStyle(fontSize: 16, color: accentYellow, fontWeight: FontWeight.w500),
+                            ),
+                            const SizedBox(height: 2),
+                            // CURSO (Agora Amarelo)
+                            Text(
+                              cert.curso,
+                              style: TextStyle(fontSize: 16, color: accentYellow),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => _abrirLink(cert.link),
+                        icon: const Icon(Icons.file_download_outlined, size: 30, color: Colors.white),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      )
                     ],
                   ),
                 );
